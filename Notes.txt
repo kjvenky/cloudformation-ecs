@@ -1,0 +1,27 @@
+Notes:
+
+export AWS_PROFILE=transin
+
+:: Create KeyPair :: 
+aws ec2 create-key-pair --key-name TransinDemo --profile $AWS_PROFILE aws ec2 create-key-pair --key-name TransinDemo --profile $AWS_PROFILE > ~/git/pem/transinDemo.pem
+
+:: Validate AWS CFN template locally ::
+aws cloudformation validate-template --template-body file://test-1.yaml --profile transin
+
+:: Create and Launch a Stack ::
+aws cloudformation create-stack \
+  --stack-name TransinDemoStack \
+  --template-body file://test-1.yaml \
+  --parameters ParameterKey=InstanceType,ParameterValue=t1.micro \
+    ParameterKey=KeyName,ParameterValue=TransinDemo \
+  --capabilities CAPABILITY_IAM --profile $AWS_PROFILE
+
+:: Update a Stack ::
+
+
+:: View Stacks ::
+aws cloudformation describe-stacks --profile $AWS_PROFILE
+
+:: Delete stack ::
+aws cloudformation delete-stack \
+  --stack-name TransinDemoStack --profile $AWS_PROFILE
