@@ -4,7 +4,7 @@ This reference architecture provides a set of YAML templates for deploying micro
 
 You can launch this CloudFormation stack in the Singapore (AP Southeast) Region in your account:
 
-[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Staging&templateURL=https://s3.amazonaws.com/ecs-refarch-cloudformation/master.yaml)  
+[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Staging&templateURL=https://s3.amazonaws.com/transin-infra/master.yaml)  
 
 ## Overview
 
