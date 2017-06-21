@@ -47,7 +47,7 @@ Resources:
             ContainerDefinitions:
                 - Name: product-service
                   Essential: true
-                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/ecs-refarch-cloudformation/product-service:1.0.0
+                  Image: 698747380200.dkr.ecr.ap-southeast-1.amazonaws.com/transin-infra:lastest
                   Memory: 128
                   PortMappings:
                     - ContainerPort: 8001

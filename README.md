@@ -1,12 +1,14 @@
-# Deploying Microservices with Amazon ECS, AWS CloudFormation, API Gateway and an Application Load Balancer
+# TransIn Microservices Infrastructure
 
-This reference architecture provides a set of YAML templates for deploying microservices to [Amazon EC2 Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html) with [AWS CloudFormation](https://aws.amazon.com/cloudformation/).
+This reference architecture provides a set of YAML templates for deploying microservices to [Amazon EC2 Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html) with [AWS CloudFormation](https://aws.amazon.com/cloudformation/). This is a custom stack created for TransIndia Logistics.
 
-You can launch this CloudFormation stack in the Singapore (AP Southeast) Region in your account:
+You can launch this CloudFormation stack in the Singapore (AP Southeast) Region in your account by clicking the below button to launch:
 
 [![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Staging&templateURL=https://s3.amazonaws.com/transin-infra/master.yaml)  
 
-## Overview
+## Rules of launching this stack for testing purposes
+
+## Infrastructure Overview
 
 ![infrastructure-overview](images/architecture-overview.png)
 
@@ -15,9 +17,9 @@ The repository consists of a set of nested templates that deploy the following:
  - A tiered [VPC](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Introduction.html) with public and private subnets, spanning an AWS region.
  - A highly available ECS cluster deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in an [Auto Scaling](https://aws.amazon.com/autoscaling/) group.
  - A pair of [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-gateway.html) (one in each zone) to handle outbound traffic.
- - Two interconnecting microservices deployed as [ECS services](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) (website-service and product-service). 
  - An [Application Load Balancer (ALB)](https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/) to the public subnets to handle inbound traffic.
  - ALB path-based routes for each ECS service to route the inbound traffic to the correct service.
+ - API Gateway << To to be written >>
  - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
 
 ## Template details
@@ -31,12 +33,14 @@ The templates below are included in this repository and reference architecture:
 | [infrastructure/security-groups.yaml](infrastructure/security-groups.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) required by the entire stack. They are created in a separate nested template, so that they can be referenced by all of the other nested templates. |
 | [infrastructure/load-balancers.yaml](infrastructure/load-balancers.yaml) | This template deploys an ALB to the public subnets, which exposes the various ECS services. It is created in in a separate nested template, so that it can be referenced by all of the other nested templates and so that the various ECS services can register with it. |
 | [infrastructure/ecs-cluster.yaml](infrastructure/ecs-cluster.yaml) | This template deploys an ECS cluster to the private subnets using an Auto Scaling group. |
-| [services/product-service/service.yaml](services/product-service/service.yaml) | This is an example of a long-running ECS service that serves a JSON API of products. For the full source for the service, see [services/product-service/src](services/product-service/src).|
-| [services/website-service/service.yaml](services/website-service/service.yaml) | This is an example of a long-running ECS service that needs to connect to another service (product-service) via the load-balanced URL. We use an environment variable to pass the product-service URL to the containers. For the full source for this service, see [services/website-service/src](services/website-service/src). |
-
-[![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Production&templateURL=https://s3.amazonaws.com/ecs-refarch-cloudformation/master.yaml)    
 
 ### Creating a new Transin ECS service
+1. Push you code to master branch in gitlab
+2. This triggers a CI run using gitlab's default CI. 
+a. Gitlabs CI will run the neccessary test cases.
+b. If the CI/CD build is completely successsful, Gitlab will build a docker container and push the TransIn's Docker repository.
+c. Gitlabs will trigger a mail to you at your company mail ID once the CI build is complete.
+3. 
 
 1. Push your container to a registry somewhere to [Amazon ECR](https://aws.amazon.com/ecr/)).
 2. Copy one of the existing service templates in [services/*](/services).
@@ -44,7 +48,6 @@ The templates below are included in this repository and reference architecture:
 4. Increment the `ListenerRule` priority number (no two services can have the same priority number - this is used to order the ALB path based routing rules).
 5. Copy one of the existing service definitions in [master.yaml](master.yaml) and point it at your new service template. Specify the HTTP `Path` at which you want the service exposed. 
 6. Deploy the templates as a new stack, or as an update to an existing stack.
-
 
 It is ***not*** set up to scale automatically based on any policies (CPU, network, time of day, etc.). 
   
