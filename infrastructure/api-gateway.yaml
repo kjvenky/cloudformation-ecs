@@ -1,0 +1,29 @@
+Description: >
+    This template deploys an API Gateway to cluster to the provided VPC?
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+    VPC:
+        Description: Choose which VPC this ECS cluster should be deployed to
+        Type: AWS::EC2::VPC::Id
+        Default: vpc-b91557dd
+
+Resources:
+
+    APIGateway:
+        Type: AWS::ECS::Cluster
+        Properties:
+            Name: TransIn API
+            Description: A demo API for TransIn
+            BodyS3Location: https://s3-ap-southeast-1.amazonaws.com/transin-api-gateway/transin-swagger-v1.yaml
+            FailOnWarnings: 1
+
+Outputs:
+    APIGateway:
+        Description: A reference to the ECS cluster
+        Value: !Ref VPC
+

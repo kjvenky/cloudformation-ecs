@@ -21,7 +21,8 @@ Parameters:
         Type: AWS::EC2::SecurityGroup::Id
 
 Resources:
-
+    
+    # Launches a application load balancer
     LoadBalancer:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:

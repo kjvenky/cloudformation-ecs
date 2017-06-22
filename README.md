@@ -40,7 +40,7 @@ The templates below are included in this repository and reference architecture:
 a. Gitlabs CI will run the neccessary test cases.
 b. If the CI/CD build is completely successsful, Gitlab will build a docker container and push the TransIn's Docker repository.
 c. Gitlabs will trigger a mail to you at your company mail ID once the CI build is complete.
-3. 
+3.  
 
 1. Push your container to a registry somewhere to [Amazon ECR](https://aws.amazon.com/ecr/)).
 2. Copy one of the existing service templates in [services/*](/services).
