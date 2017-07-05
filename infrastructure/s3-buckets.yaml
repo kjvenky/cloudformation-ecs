@@ -1,0 +1,52 @@
+Description: >
+    This template deploys an s3 buckets needed to save micro service templates.
+
+Parameters:
+    CompanyName:
+        Description: Used to name space company buckets
+        Type: String
+        
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        
+Resources:
+    
+    ServiceTemplates:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Delete
+        Properties:
+            AccessControl: Private
+            BucketName: !Join [ "-", [ !Ref CompanyName, !Ref EnvironmentName, !Ref "AWS::Region" ,'service-templates' ]]
+            VersioningConfiguration:
+                Status: Enabled
+            Tags: 
+                - Key: Name
+                  Value: !Ref EnvironmentName
+    
+    ServiceTemplatesBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+                Bucket: 
+                  Ref: ServiceTemplates
+                PolicyDocument: 
+                  Statement: 
+                    - 
+                      Action: 
+                        - s3:GetObject
+                      Effect: Allow
+                      Resource: 
+                        Fn::Join: 
+                          - ''
+                          - 
+                            - 'arn:aws:s3:::'
+                            - 
+                              Ref: ServiceTemplates
+                            - /*
+                      Principal: '*'
+                    
+Outputs:
+
+    TemplatesEndPoint:
+        Description: End point for the S3 bucket
+        Value: !Ref ServiceTemplates

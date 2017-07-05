@@ -41,6 +41,9 @@ Resources:
         Type: AWS::EC2::VPC
         Properties:
             CidrBlock: !Ref VpcCIDR
+            EnableDnsHostnames: true
+            EnableDnsSupport: true
+            InstanceTenancy: dedicated
             Tags: 
                 - Key: Name 
                   Value: !Ref EnvironmentName
@@ -101,7 +104,7 @@ Resources:
             Tags: 
                 - Key: Name 
                   Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
-
+    
     NatGateway1EIP:
         Type: AWS::EC2::EIP
         DependsOn: InternetGatewayAttachment
@@ -226,3 +229,6 @@ Outputs:
     PrivateSubnet2: 
         Description: A reference to the private subnet in the 2nd Availability Zone
         Value: !Ref PrivateSubnet2
+
+    # DBSubnetGroup: 
+    #     Value: !Ref DBSubnetGroup

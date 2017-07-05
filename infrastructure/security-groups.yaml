@@ -27,6 +27,11 @@ Resources:
                 # Only allow inbound access to ECS from the ELB
                 - SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup 
                   IpProtocol: -1
+                - SourceSecurityGroupId: !Ref BastionSecurityGroup
+                  IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+
             Tags: 
                 - Key: Name
                   Value: !Sub ${EnvironmentName}-ECS-Hosts
@@ -46,6 +51,52 @@ Resources:
             Tags: 
                 - Key: Name
                   Value: !Sub ${EnvironmentName}-LoadBalancers
+    
+    DBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Security group for RDS DB Instance.
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: '5432'
+                  ToPort: '5432'
+    
+    # EfsSecurityGroup:
+    #     Type: AWS::EC2::SecurityGroup
+    #     Properties:
+    #       GroupDescription: Instance to EFS Mount Access
+    #       VpcId: !Ref VPC
+
+    # SecurityGroupIngress:
+    #     Type: AWS::EC2::SecurityGroupIngress
+    #     DependsOn: EfsSecurityGroup
+    #     Properties:
+    #       GroupId: !Ref EfsSecurityGroup
+    #       IpProtocol: "-1"
+    #       SourceSecurityGroupId: !Ref EfsSecurityGroup     
+          
+    MountTargetSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        VpcId: !Ref VPC
+        GroupDescription: Security group for mount target
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '2049'
+          ToPort: '2049'
+          SourceSecurityGroupId: !Ref ECSHostSecurityGroup
+    
+    BastionSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Enable access to the bastion host
+        VpcId: !Ref VPC
+        SecurityGroupIngress:
+        # Allow access from anywhere to our ECS services
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+
 
 Outputs:
 
@@ -56,4 +107,25 @@ Outputs:
     LoadBalancerSecurityGroup:
         Description: A reference to the security group for load balancers
         Value: !Ref LoadBalancerSecurityGroup
+    
+    DBSecurityGroup:
+        Description: A reference to the security group for RDS
+        Value: !Ref DBSecurityGroup
+    
+    # EfsSecurityGroup:
+    #     Description: A reference to the security group for RDS
+    #     Value: !Ref EfsSecurityGroup
+
+    MountTargetSecurityGroup:
+        Description: A reference to the security group for RDS
+        Value: !Ref MountTargetSecurityGroup
+    
+    BastionSecurityGroup:
+        Description: A reference to the security group for RDS
+        Value: !Ref BastionSecurityGroup
+    
+    # SecurityGroupIngress:
+    #     Description: MountTargetSecurityGroup
+    #     Value: !Ref SecurityGroupIngress
+
 

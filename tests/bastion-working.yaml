@@ -1,0 +1,189 @@
+
+Description: >
+  Example VPC that has two public subnets and two private subnets in different
+  AZs NATs to enable instances in private subnets to access the internet and bastion
+  hosts to moderate SSH access
+
+Parameters:
+
+    KeyName:
+      Description: Name of an existing EC2 KeyPair to enable SSH access to the bastion
+        host
+      Type: String
+      MinLength: '1'
+      MaxLength: '64'
+      AllowedPattern: "[-_ a-zA-Z0-9]*"
+      Default: linux-bastion
+      ConstraintDescription: can contain only alphanumeric characters, spaces, dashes
+        and underscores.
+
+    BastionInstanceType:
+      Description: Bastion instance type
+      Type: String
+      Default: m1.small
+      AllowedValues:
+      - t1.micro
+      - m1.small
+      - m1.medium
+      - m1.large
+      ConstraintDescription: must be a valid and allowed EC2 instance type.
+
+    CompanyName:
+        Description: Used to name space company buckets
+        Type: String
+        Default: transin
+        
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: transin
+    
+    VPC:
+        Description: Choose which VPC this ECS cluster should be deployed to
+        Type: AWS::EC2::VPC::Id
+        Default: vpc-31402e55
+
+    Subnets:
+        Description: Choose which subnets this ECS cluster should be deployed to
+        Type: List<AWS::EC2::Subnet::Id>
+        Default: subnet-ae90a4ca,subnet-ae7228d8
+        
+    PublicSubnet1:
+        Description: Subnet 1
+        Type: AWS::EC2::Subnet::Id
+        Default: subnet-ae90a4ca
+        
+    PublicSubnet2:
+        Description: Subnet 2
+        Type: AWS::EC2::Subnet::Id
+        Default: subnet-ae7228d8
+    
+    SecurityGroup:
+        Description: Test
+        Type: String
+        
+Mappings:
+
+  AWSInstanceType2Arch:
+    t1.micro:
+      Arch: '64'
+    m1.small:
+      Arch: '64'
+    m1.medium:
+      Arch: '64'
+    m1.large:
+      Arch: '64'
+
+  AWSNATAMI:
+    us-east-1:
+      AMI: ami-c6699baf
+    us-west-2:
+      AMI: ami-52ff7262
+    us-west-1:
+      AMI: ami-3bcc9e7e
+    eu-west-1:
+      AMI: ami-0b5b6c7f
+    ap-southeast-1:
+      AMI: ami-02eb9350
+    ap-southeast-2:
+      AMI: ami-ab990e91
+    ap-northeast-1:
+      AMI: ami-14d86d15
+    sa-east-1:
+      AMI: ami-0439e619
+
+  AWSRegionArch2AMI:
+    us-east-1:
+      '64': ami-0568456c
+    us-west-2:
+      '64': ami-927613a2
+    us-west-1:
+      '64': ami-c08dbc85
+    ap-southeast-2:
+      '64': ami-10918173
+  
+Resources:
+
+  BastionHost1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: BastionInstanceType
+      KeyName:
+        Ref: KeyName
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: BastionInstanceType
+          - Arch
+      NetworkInterfaces:
+      - GroupSet:
+        - Ref: BastionSecurityGroup2
+        AssociatePublicIpAddress: 'true'
+        DeviceIndex: '0'
+        DeleteOnTermination: 'true'
+        SubnetId:
+          Ref: PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: Bastion Host
+      - Key: Bastion
+        Value: 'true'
+
+  BastionHost2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: BastionInstanceType
+      KeyName:
+        Ref: KeyName
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: BastionInstanceType
+          - Arch
+      NetworkInterfaces:
+      - GroupSet:
+        - Ref: BastionSecurityGroup2
+        AssociatePublicIpAddress: 'true'
+        DeviceIndex: '0'
+        DeleteOnTermination: 'true'
+        SubnetId:
+          Ref: PublicSubnet2
+      Tags:
+      - Key: Name
+        Value: Bastion Host
+      - Key: Bastion
+        Value: 'true'
+
+  BastionSecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable access to the bastion host
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+
+  InternalSshSecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh access from bastion
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        SourceSecurityGroupId:
+          Ref: BastionSecurityGroup2
+      SecurityGroupEgress: []

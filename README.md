@@ -8,6 +8,9 @@ You can launch this CloudFormation stack in the Singapore (AP Southeast) Region 
 
 ## Rules of launching this stack for testing purposes
 
+## Prequisites
+- 2 Keypairs : 1 for bastion instance, 1 for ECS login
+
 ## Infrastructure Overview
 
 ![infrastructure-overview](images/architecture-overview.png)

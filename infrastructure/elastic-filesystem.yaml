@@ -1,0 +1,75 @@
+Description: >
+    This template deploys elastic file system for use across the infrastructure.
+
+Parameters:
+    CompanyName:
+        Description: Used to name space company buckets
+        Type: String
+        Default: transin
+        
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: transin
+
+    # EFS
+    PerformanceMode:
+      Type: String
+      Default: generalPurpose
+      AllowedValues:
+      - generalPurpose
+      - maxIO
+    
+    MountTargetSecurityGroup:
+        Type: AWS::EC2::SecurityGroup::Id
+        Default: sg-aba89fcc
+  
+    PrivateSubnet1:
+        Type: AWS::EC2::Subnet::Id
+        Default: subnet-baa793de
+    
+    PrivateSubnet2:
+        Type: AWS::EC2::Subnet::Id
+        Default: subnet-10401a66
+    
+        
+Resources:
+    
+    FileSystem:
+      Type: AWS::EFS::FileSystem
+      Properties:
+        FileSystemTags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+        PerformanceMode: !Ref PerformanceMode
+    
+    MountTarget1:
+      Type: AWS::EFS::MountTarget
+      DependsOn:
+      - FileSystem
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: !Ref PrivateSubnet1
+        SecurityGroups:
+        - !Ref MountTargetSecurityGroup
+
+    MountTarget2:
+      Type: AWS::EFS::MountTarget
+      DependsOn:
+      - FileSystem
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: !Ref PrivateSubnet2
+        SecurityGroups:
+        - !Ref MountTargetSecurityGroup
+
+    
+Outputs:
+
+  FileSystem:
+    Description: FileSystem
+    Value: !Ref FileSystem
+  
+  PerformanceMode:
+    Description: PerformanceMode
+    Value: !Ref PerformanceMode

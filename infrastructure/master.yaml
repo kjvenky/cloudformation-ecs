@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+
+    This is a Master template to deploy the Transin Infrastructure.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: CompanyDetails
+      Parameters:
+      - CompanyName
+      - EnvironmentName
+      - Launch
+      - Version
+    - Label:
+        default: Infrastructure
+      Parameters:
+      - ServiceTemplatesBucketName
+    - Label:
+        default: Docker
+      Parameters:
+      - DockerUser
+      - DockerPass
+      - DockerEmail
+      - DockerRegistry
+    ParameterLabels:
+      Launch:
+        default: Launch
+      Version:
+        default: '0.0.1'
+      DockerUser:
+        default: DockerUserName
+      DockerPass:
+        default: DockerPassword
+      DockerEmail:
+        default: DockerEmail
+      DockerRegistry:
+        default: Registry
+        
+Parameters:
+  CompanyName:
+    Type: String
+    Default: transin
+  EnvironmentName:
+    Type: String
+    Default: staging
+  Version:
+    Type: String
+    Default: master
+    Description: Docker tag to specify the version of Empire to run. This can be any
+      git branch or sha.
+  DockerRegistry:
+    Type: String
+    Description: The URL of the Docker registry to pull private images from.
+    Default: https://index.docker.io/v1/
+  DockerUser:
+    Type: String
+    Description: Username of a Docker registry user to pull images from private repositories.
+    Default: kjvenky
+  DockerPass:
+    Type: String
+    Description: Password of a Docker registry user to pull images from private repositories.
+    Default: Lopa123#
+    NoEcho: true
+  DockerEmail:
+    Type: String
+    Description: Email of a Docker registry user to pull images from private repositories.
+    Default: kjvenky@gmail.com
+  InfraStructureBucket:
+    Type: String
+    Default: https://s3.amazonaws.com/transin-infra
+  ECSKeyName:
+    Type: String
+    Default: transin-ecs
+  BastionKeyName:
+    Type: String
+    Default: transin-bastion
+
+Resources:
+
+    ServiceTemplates: 
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 's3-buckets.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                CompanyName: !Ref CompanyName
+
+    VPC:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'vpc.yaml' ]] 
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                VpcCIDR:            10.192.0.0/16
+                PublicSubnet1CIDR:  10.192.8.0/21
+                PublicSubnet2CIDR:  10.192.16.0/21
+                PrivateSubnet1CIDR: 10.192.24.0/21
+                PrivateSubnet2CIDR: 10.192.32.0/21
+
+    SecurityGroups:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'security-groups.yaml' ]] 
+            Parameters: 
+                EnvironmentName: !Ref EnvironmentName
+                VPC: !GetAtt VPC.Outputs.VPC
+
+    # APIGateway: 
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: https://s3.amazonaws.com/transin-infra/infrastructure/api-gateway.yaml
+    #         Parameters:
+    #             EnvironmentName: EnvironmentName
+    #             VPC: !GetAtt VPC.Outputs.VPC
+    #             Subnets: !GetAtt VPC.Outputs.PublicSubnets
+    
+    BastionStack:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'bastion-instance.yaml' ]] 
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                CompanyName: !Ref CompanyName
+                VPC: !GetAtt VPC.Outputs.VPC
+                Subnets: !GetAtt VPC.Outputs.PublicSubnets
+                BastionSecurityGroup: !GetAtt SecurityGroups.Outputs.BastionSecurityGroup
+                KeyPairName: !Ref BastionKeyName
+                NumBastionHosts: '2'
+
+    ALB:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'load-balancers.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                VPC: !GetAtt VPC.Outputs.VPC
+                Subnets: !GetAtt VPC.Outputs.PublicSubnets
+                SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
+
+    RDS: # Move it to a special DB subnet
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'rds-database.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                CompanyName: !Ref CompanyName
+                VPC: !GetAtt VPC.Outputs.VPC
+                DBSecurityGroup: !GetAtt SecurityGroups.Outputs.DBSecurityGroup
+                PublicSubnet1: !GetAtt VPC.Outputs.PublicSubnet1
+                PublicSubnet2: !GetAtt VPC.Outputs.PublicSubnet2
+
+    EFS:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'elastic-filesystem.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                CompanyName: !Ref CompanyName
+                MountTargetSecurityGroup: !GetAtt SecurityGroups.Outputs.MountTargetSecurityGroup
+                PrivateSubnet1: !GetAtt VPC.Outputs.PrivateSubnet1
+                PrivateSubnet2: !GetAtt VPC.Outputs.PrivateSubnet2
+
+    ECS:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'ecs-cluster.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                InstanceType: c4.large
+                ClusterSize: 2
+                VPC: !GetAtt VPC.Outputs.VPC
+                SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
+                Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+                FileSystem: !GetAtt EFS.Outputs.FileSystem
+                KeyName: !Ref ECSKeyName

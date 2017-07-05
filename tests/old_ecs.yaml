@@ -33,19 +33,6 @@ Parameters:
         Description: Select the Security Group to use for the ECS cluster hosts
         Type: AWS::EC2::SecurityGroup::Id
         Default: sg-998eb9fe
-    
-    FileSystem:
-        Description: Select the EFS file system to use with this ECS
-        Type: String
-        Default: fs-25b7511c
-    
-    EfsMountPoint:
-        Type: String
-        Default: /mnt/efs/
-
-    KeyName:
-        Type: String
-        Default: transin-test
 
 Mappings:
 
@@ -97,7 +84,7 @@ Resources:
             VPCZoneIdentifier: !Ref Subnets
             LaunchConfigurationName: !Ref ECSLaunchConfiguration
             MinSize: !Ref ClusterSize
-            MaxSize: 4
+            MaxSize: !Ref ClusterSize
             DesiredCapacity: !Ref ClusterSize
             Tags: 
                 - Key: Name
@@ -108,8 +95,8 @@ Resources:
                 Timeout: PT15M
         UpdatePolicy:
             AutoScalingRollingUpdate:
-                MinInstancesInService: 2
-                MaxBatchSize: 2
+                MinInstancesInService: 1
+                MaxBatchSize: 1
                 PauseTime: PT15M
                 WaitOnResourceSignals: true
         
@@ -118,24 +105,15 @@ Resources:
         Properties:
             ImageId:  !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
             InstanceType: !Ref InstanceType
-            KeyName: !Ref KeyName
             SecurityGroups: 
                 - !Ref SecurityGroup
             IamInstanceProfile: !Ref ECSInstanceProfile
             UserData: 
                 "Fn::Base64": !Sub |
                     #!/bin/bash
-                    yum install -y aws-cfn-bootstrap jq nfs-utils python27 python27-pip awscli
-                    pip install --upgrade awscli
+                    yum install -y aws-cfn-bootstrap
                     /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchConfiguration
                     /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSAutoScalingGroup
-                    sudo su
-                    mkdir -p ${EfsMountPoint}
-                    ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ ${EfsMountPoint} nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0" >> /etc/fstab
-                    docker stop ecs-agent
-                    /etc/init.d/docker restart
-                    docker start ecs-agent
-                    echo "Hello world! Testing"
 
         Metadata:
             AWS::CloudFormation::Init:
@@ -143,7 +121,6 @@ Resources:
                     commands:
                         01_add_instance_to_cluster:
                             command: !Sub echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
-
                     files:
                         "/etc/cfn/cfn-hup.conf":
                             mode: 000400
