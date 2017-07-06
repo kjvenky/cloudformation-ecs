@@ -106,7 +106,7 @@ Parameters:
     - m4.xlarge
     - m4.2xlarge
     - m4.4xlarge
-    Default: t2.nano
+    Default: m3.large
     Description: Amazon EC2 instance type for the bastion instances
     Type: String
 
@@ -490,6 +490,9 @@ Resources:
           - ''
           - - "#!/bin/bash\n"
             - 'export PATH=$PATH:/usr/local/bin
+
+'           
+            - 'yum install postgresql92-server.x86_64 postgresql92-contrib.x86_64 postgresql92-devel.x86_64
 
 '
             - 'which pip &> /dev/null

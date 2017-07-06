@@ -58,9 +58,12 @@ Resources:
             GroupDescription: Security group for RDS DB Instance.
             VpcId: !Ref VPC
             SecurityGroupIngress:
-                - IpProtocol: tcp
+                # Only allow inbound access to RDS from ECS
+                - SourceSecurityGroupId: !Ref ECSHostSecurityGroup
+                  IpProtocol: tcp
                   FromPort: '5432'
                   ToPort: '5432'
+
     
     # EfsSecurityGroup:
     #     Type: AWS::EC2::SecurityGroup

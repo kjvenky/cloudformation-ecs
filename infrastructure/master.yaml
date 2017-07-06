@@ -73,10 +73,10 @@ Parameters:
     Default: https://s3.amazonaws.com/transin-infra
   ECSKeyName:
     Type: String
-    Default: transin-ecs
+    Default: transin-staging-ec2
   BastionKeyName:
     Type: String
-    Default: transin-bastion
+    Default: transin-staging-bastion
 
 Resources:
 
@@ -128,7 +128,7 @@ Resources:
                 Subnets: !GetAtt VPC.Outputs.PublicSubnets
                 BastionSecurityGroup: !GetAtt SecurityGroups.Outputs.BastionSecurityGroup
                 KeyPairName: !Ref BastionKeyName
-                NumBastionHosts: '2'
+                NumBastionHosts: '1'
 
     ALB:
         Type: AWS::CloudFormation::Stack
@@ -176,3 +176,5 @@ Resources:
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
                 FileSystem: !GetAtt EFS.Outputs.FileSystem
                 KeyName: !Ref ECSKeyName
+
+    # Deploy pets for testing

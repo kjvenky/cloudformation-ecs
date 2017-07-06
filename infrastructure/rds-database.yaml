@@ -15,15 +15,12 @@ Parameters:
     VPC:
         Type: AWS::EC2::VPC::Id
         Description: Choose which VPC the security groups should be deployed to
-        Default: vpc-bf4c01db
     
     PublicSubnet1:
         Type: AWS::EC2::Subnet::Id
-        Default: subnet-287a6e4c
 
     PublicSubnet2:
         Type: AWS::EC2::Subnet::Id
-        Default: subnet-6e487118
     
     # DBSubnetGroup:
     #     Type: AWS::RDS::DBSubnetGroup
