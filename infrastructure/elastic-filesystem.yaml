@@ -19,19 +19,6 @@ Parameters:
       AllowedValues:
       - generalPurpose
       - maxIO
-    
-    MountTargetSecurityGroup:
-        Type: AWS::EC2::SecurityGroup::Id
-        Default: sg-aba89fcc
-  
-    PrivateSubnet1:
-        Type: AWS::EC2::Subnet::Id
-        Default: subnet-baa793de
-    
-    PrivateSubnet2:
-        Type: AWS::EC2::Subnet::Id
-        Default: subnet-10401a66
-    
         
 Resources:
     
@@ -42,16 +29,17 @@ Resources:
         - Key: Name
           Value: !Ref AWS::StackName
         PerformanceMode: !Ref PerformanceMode
-    
+        
     MountTarget1:
       Type: AWS::EFS::MountTarget
       DependsOn:
       - FileSystem
       Properties:
         FileSystemId: !Ref FileSystem
-        SubnetId: !Ref PrivateSubnet1
+        SubnetId: 
+          Fn::ImportValue: !Sub "${EnvironmentName}-private-subnet-1"
         SecurityGroups:
-        - !Ref MountTargetSecurityGroup
+        - Fn::ImportValue: !Sub "${EnvironmentName}-sg-mount-target"
 
     MountTarget2:
       Type: AWS::EFS::MountTarget
@@ -59,9 +47,10 @@ Resources:
       - FileSystem
       Properties:
         FileSystemId: !Ref FileSystem
-        SubnetId: !Ref PrivateSubnet2
+        SubnetId: 
+          Fn::ImportValue: !Sub "${EnvironmentName}-private-subnet-2"
         SecurityGroups:
-        - !Ref MountTargetSecurityGroup
+        - Fn::ImportValue: !Sub "${EnvironmentName}-sg-mount-target"
 
     
 Outputs:
@@ -69,7 +58,9 @@ Outputs:
   FileSystem:
     Description: FileSystem
     Value: !Ref FileSystem
-  
+    Export: 
+      Name: !Sub '${EnvironmentName}-efs-id'
+    
   PerformanceMode:
     Description: PerformanceMode
     Value: !Ref PerformanceMode

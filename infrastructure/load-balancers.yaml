@@ -8,18 +8,6 @@ Parameters:
         Description: An environment name that will be prefixed to resource names
         Type: String
 
-    VPC:
-        Type: AWS::EC2::VPC::Id
-        Description: Choose which VPC the Applicaion Load Balancer should be deployed to
-
-    Subnets:
-        Description: Choose which subnets the Applicaion Load Balancer should be deployed to
-        Type: List<AWS::EC2::Subnet::Id>
-
-    SecurityGroup:
-        Description: Select the Security Group to apply to the Applicaion Load Balancer
-        Type: AWS::EC2::SecurityGroup::Id
-
 Resources:
     
     # Launches a application load balancer
@@ -27,9 +15,11 @@ Resources:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
             Name: !Ref EnvironmentName
-            Subnets: !Ref Subnets
+            Subnets:
+                - Fn::ImportValue: !Sub "${EnvironmentName}-public-subnet-1"
+                - Fn::ImportValue: !Sub "${EnvironmentName}-public-subnet-2"
             SecurityGroups: 
-                - !Ref SecurityGroup
+                - Fn::ImportValue: !Sub "${EnvironmentName}-sg-alb"
             Tags: 
                 - Key: Name
                   Value: !Ref EnvironmentName
@@ -51,7 +41,8 @@ Resources:
         Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
             Name: default
-            VpcId: !Ref VPC
+            VpcId: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
             Port: 80
             Protocol: HTTP
            
@@ -60,13 +51,19 @@ Outputs:
     LoadBalancer:
         Description: A reference to the Application Load Balancer
         Value: !Ref LoadBalancer
+        Export: 
+            Name: !Sub '${EnvironmentName}-alb-id'
 
     LoadBalancerUrl:
         Description: The URL of the ALB
         Value: !GetAtt LoadBalancer.DNSName
+        Export: 
+            Name: !Sub '${EnvironmentName}-alb-endpoint'
 
     Listener:
         Description: A reference to a port 80 listener
         Value: !Ref LoadBalancerListener  
+        Export: 
+            Name: !Sub '${EnvironmentName}-alb-listener'
 
     

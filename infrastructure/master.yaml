@@ -80,7 +80,7 @@ Parameters:
 
 Resources:
 
-    ServiceTemplates: 
+    S3Buckets: 
         Type: AWS::CloudFormation::Stack
         Properties:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 's3-buckets.yaml' ]]
@@ -102,11 +102,19 @@ Resources:
 
     SecurityGroups:
         Type: AWS::CloudFormation::Stack
+        DependsOn: VPC
         Properties:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'security-groups.yaml' ]] 
             Parameters: 
                 EnvironmentName: !Ref EnvironmentName
                 VPC: !GetAtt VPC.Outputs.VPC
+    
+    IAMRoles:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'iam-roles.yaml' ]] 
+            Parameters: 
+                EnvironmentName: !Ref EnvironmentName
 
     # APIGateway: 
     #     Type: AWS::CloudFormation::Stack
@@ -117,52 +125,46 @@ Resources:
     #             VPC: !GetAtt VPC.Outputs.VPC
     #             Subnets: !GetAtt VPC.Outputs.PublicSubnets
     
-    BastionStack:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'bastion-instance.yaml' ]] 
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
-                CompanyName: !Ref CompanyName
-                VPC: !GetAtt VPC.Outputs.VPC
-                Subnets: !GetAtt VPC.Outputs.PublicSubnets
-                BastionSecurityGroup: !GetAtt SecurityGroups.Outputs.BastionSecurityGroup
-                KeyPairName: !Ref BastionKeyName
-                NumBastionHosts: '1'
+    # BastionStack:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'bastion-instance.yaml' ]] 
+    #         Parameters:
+    #             EnvironmentName: !Ref EnvironmentName
+    #             CompanyName: !Ref CompanyName
+    #             KeyPairName: !Ref BastionKeyName
+    #             NumBastionHosts: '1'
 
     ALB:
         Type: AWS::CloudFormation::Stack
+        DependsOn: 
+            - VPC
+            - SecurityGroups
         Properties:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'load-balancers.yaml' ]]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
-                VPC: !GetAtt VPC.Outputs.VPC
-                Subnets: !GetAtt VPC.Outputs.PublicSubnets
-                SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
-
+                
     RDS: # Move it to a special DB subnet
         Type: AWS::CloudFormation::Stack
+        DependsOn: SecurityGroups
         Properties:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'rds-database.yaml' ]]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
                 CompanyName: !Ref CompanyName
-                VPC: !GetAtt VPC.Outputs.VPC
-                DBSecurityGroup: !GetAtt SecurityGroups.Outputs.DBSecurityGroup
-                PublicSubnet1: !GetAtt VPC.Outputs.PublicSubnet1
-                PublicSubnet2: !GetAtt VPC.Outputs.PublicSubnet2
 
     EFS:
         Type: AWS::CloudFormation::Stack
+        DependsOn: 
+            - VPC
+            - SecurityGroups
         Properties:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'elastic-filesystem.yaml' ]]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
                 CompanyName: !Ref CompanyName
-                MountTargetSecurityGroup: !GetAtt SecurityGroups.Outputs.MountTargetSecurityGroup
-                PrivateSubnet1: !GetAtt VPC.Outputs.PrivateSubnet1
-                PrivateSubnet2: !GetAtt VPC.Outputs.PrivateSubnet2
-
+            
     ECS:
         Type: AWS::CloudFormation::Stack
         Properties:
@@ -170,11 +172,16 @@ Resources:
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
                 InstanceType: c4.large
-                ClusterSize: 2
-                VPC: !GetAtt VPC.Outputs.VPC
-                SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
-                Subnets: !GetAtt VPC.Outputs.PrivateSubnets
-                FileSystem: !GetAtt EFS.Outputs.FileSystem
+                ClusterSize: 1
                 KeyName: !Ref ECSKeyName
+                FileSystem: !GetAtt EFS.Outputs.FileSystem
 
-    # Deploy pets for testing
+    # # Deploy pets for testing
+    PETS:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: ECS
+        Properties:
+            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'pets-service.yaml' ]]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                CompanyName: !Ref CompanyName

@@ -12,16 +12,6 @@ Parameters:
         Type: String
         Default: staging
     
-    VPC:
-        Type: AWS::EC2::VPC::Id
-        Description: Choose which VPC the security groups should be deployed to
-    
-    PublicSubnet1:
-        Type: AWS::EC2::Subnet::Id
-
-    PublicSubnet2:
-        Type: AWS::EC2::Subnet::Id
-    
     # DBSubnetGroup:
     #     Type: AWS::RDS::DBSubnetGroup
     #     Default: staging-vpc-7sxfcu8m57ku-dbsubnetgroup-oa0n9fxxdmw0
@@ -53,10 +43,6 @@ Parameters:
     DBStorage:
         Type: String
         Default: '10'
-
-    DBSecurityGroup:
-        Type: AWS::EC2::SecurityGroup::Id
-        Default: sg-fef6f599
     
     MultiAZDatabase:
         Type: String
@@ -72,8 +58,8 @@ Resources:
         Properties:
           DBSubnetGroupDescription: Subnet group for Transin RDS db
           SubnetIds:
-          - !Ref PublicSubnet1
-          - !Ref PublicSubnet2
+            - Fn::ImportValue: !Sub "${EnvironmentName}-public-subnet-1"
+            - Fn::ImportValue: !Sub "${EnvironmentName}-public-subnet-2"
 
     DB:
         Type: AWS::RDS::DBInstance
@@ -88,7 +74,7 @@ Resources:
           DBSubnetGroupName: !Ref DBSubnetGroup
           AllocatedStorage: !Ref DBStorage
           VPCSecurityGroups: 
-          - !Ref DBSecurityGroup
+            - Fn::ImportValue: !Sub "${EnvironmentName}-sg-rds"
   
 Outputs:
     
@@ -98,10 +84,15 @@ Outputs:
           Fn::GetAtt:
           - DB
           - Endpoint.Address
-    
+        Export: 
+            Name: !Sub '${EnvironmentName}-rds-address'
+
     DBPort:
         Description: database endpoint port
         Value:
           Fn::GetAtt:
           - DB
           - Endpoint.Port
+        Export: 
+            Name: !Sub '${EnvironmentName}-rds-port'
+

@@ -14,6 +14,19 @@ Parameters:
         Description: Choose which VPC the security groups should be deployed to
 
 Resources:
+    
+    DefaultSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            VpcId: !Ref VPC
+            GroupDescription: Access to the ECS hosts and the tasks/containers that run on them
+            SecurityGroupIngress:
+                - CidrIp: 0.0.0.0/0
+                  IpProtocol: -1
+            Tags: 
+                - Key: Name
+                  Value: !Sub ${EnvironmentName}-ECS-Hosts
+
 
     # This security group defines who/where is allowed to access the ECS hosts directly.
     # By default we're just allowing access from the load balancer.  If you want to SSH 
@@ -102,18 +115,30 @@ Resources:
 
 
 Outputs:
+    
+    DefaultSecurityGroup:
+        Description: A reference to the security group for ECS hosts
+        Value: !Ref ECSHostSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-default'
 
     ECSHostSecurityGroup: 
         Description: A reference to the security group for ECS hosts
         Value: !Ref ECSHostSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-ecs'
 
     LoadBalancerSecurityGroup:
         Description: A reference to the security group for load balancers
         Value: !Ref LoadBalancerSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-alb'
     
     DBSecurityGroup:
         Description: A reference to the security group for RDS
         Value: !Ref DBSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-rds'
     
     # EfsSecurityGroup:
     #     Description: A reference to the security group for RDS
@@ -122,10 +147,14 @@ Outputs:
     MountTargetSecurityGroup:
         Description: A reference to the security group for RDS
         Value: !Ref MountTargetSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-mount-target'
     
     BastionSecurityGroup:
         Description: A reference to the security group for RDS
         Value: !Ref BastionSecurityGroup
+        Export: 
+            Name: !Sub '${EnvironmentName}-sg-bastion'
     
     # SecurityGroupIngress:
     #     Description: MountTargetSecurityGroup

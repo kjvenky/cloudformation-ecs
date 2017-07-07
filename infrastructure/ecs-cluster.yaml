@@ -17,28 +17,8 @@ Parameters:
     ClusterSize:
         Description: How many ECS hosts do you want to initially deploy?
         Type: Number
-        Default: 2
+        Default: 1
 
-    VPC:
-        Description: Choose which VPC this ECS cluster should be deployed to
-        Type: AWS::EC2::VPC::Id
-        Default: vpc-31402e55
-
-    Subnets:
-        Description: Choose which subnets this ECS cluster should be deployed to
-        Type: List<AWS::EC2::Subnet::Id>
-        Default: subnet-dd97a3b9,subnet-c1712bb7
-        
-    SecurityGroup:
-        Description: Select the Security Group to use for the ECS cluster hosts
-        Type: AWS::EC2::SecurityGroup::Id
-        Default: sg-998eb9fe
-    
-    FileSystem:
-        Description: Select the EFS file system to use with this ECS
-        Type: String
-        Default: fs-25b7511c
-    
     EfsMountPoint:
         Type: String
         Default: /mnt/efs/
@@ -46,6 +26,10 @@ Parameters:
     KeyName:
         Type: String
         Default: transin-test
+
+    FileSystem:
+        Type: String
+        Default: fs-eb46c8a2
 
 Mappings:
 
@@ -94,7 +78,9 @@ Resources:
     ECSAutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties: 
-            VPCZoneIdentifier: !Ref Subnets
+            VPCZoneIdentifier:
+                - Fn::ImportValue: !Sub "${EnvironmentName}-private-subnet-1"
+                - Fn::ImportValue: !Sub "${EnvironmentName}-private-subnet-2"
             LaunchConfigurationName: !Ref ECSLaunchConfiguration
             MinSize: !Ref ClusterSize
             MaxSize: 4
@@ -120,22 +106,22 @@ Resources:
             InstanceType: !Ref InstanceType
             KeyName: !Ref KeyName
             SecurityGroups: 
-                - !Ref SecurityGroup
+                - Fn::ImportValue: !Sub "${EnvironmentName}-sg-ecs"
             IamInstanceProfile: !Ref ECSInstanceProfile
             UserData: 
                 "Fn::Base64": !Sub |
                     #!/bin/bash
-                    yum install -y aws-cfn-bootstrap jq nfs-utils python27 python27-pip awscli
+                    yum install -y aws-cfn-bootstrap jq nfs-utils python27 python27-pip awscli 
                     pip install --upgrade awscli
                     /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchConfiguration
                     /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSAutoScalingGroup
-                    sudo su
-                    mkdir -p ${EfsMountPoint}
-                    ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ ${EfsMountPoint} nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0" >> /etc/fstab
+                    sudo cp /etc/fstab /etc/fstab.bak
+                    sudo mkdir -p ${EfsMountPoint}
+                    ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ ${EfsMountPoint} nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0" | sudo tee -a /etc/fstab
+                    sudo mount -a
                     docker stop ecs-agent
                     /etc/init.d/docker restart
                     docker start ecs-agent
-                    echo "Hello world! Testing"
 
         Metadata:
             AWS::CloudFormation::Init:
@@ -178,7 +164,7 @@ Resources:
     # to other AWS services. Please note that this role will be used by ALL containers
     # running on the ECS host.
 
-    ECSRole:
+    ECSRole: 
         Type: AWS::IAM::Role
         Properties: 
             Path: /
@@ -230,4 +216,6 @@ Outputs:
     Cluster:
         Description: A reference to the ECS cluster
         Value: !Ref ECSCluster
+        Export: 
+            Name: !Sub '${EnvironmentName}-ecs-id'
 

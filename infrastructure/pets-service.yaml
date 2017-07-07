@@ -1,0 +1,122 @@
+Description: >
+    This is an example of a long running ECS service that serves a JSON API of products.
+
+Parameters:
+
+    APIVersion: # Useful for service versioning
+        Type: String
+        Default: v1
+
+    EnvironmentName:
+        Type: String
+        Default: staging
+    
+    CompanyName:
+        Type: String
+        Default: transin
+
+    Cluster:
+        Description: Please provide the ECS Cluster ID that this service should run on
+        Type: String
+        Default: staging
+    
+    DesiredCount: 
+        Description: How many instances of this task should we run across our cluster?
+        Type: Number
+        Default: 1
+        
+    ServiceName: 
+        Type: String
+        Default: pets
+
+    Path: 
+        Description: The path to register with the Application Load Balancer
+        Type: String
+        Default: /pets
+
+Resources:
+
+    Service: 
+        Type: AWS::ECS::Service
+        DependsOn: ListenerRule
+        Properties: 
+            Cluster: !Ref Cluster
+            Role: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-iam-service-role"
+            DesiredCount: !Ref DesiredCount
+            TaskDefinition: !Ref TaskDefinition
+            LoadBalancers: 
+                - ContainerName: "pets-service"
+                  ContainerPort: 3000
+                  TargetGroupArn: !Ref TargetGroup
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: pets-service
+            ContainerDefinitions:
+                - Name: pets-service
+                  Essential: true
+                  MountPoints: 
+                    - 
+                        SourceVolume: pets-volume
+                        ContainerPath: /app/
+                        ReadOnly: false
+                  Image: kjvenky/pets
+                  Memory: 64
+                  PortMappings:
+                    - ContainerPort: 3000
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+            # Volumes: 
+            #     - 
+            #         Host: 
+            #             SourcePath: !Join ["/", ["/efs/", !Join ["-", [!Ref ServiceName, "service"]]]]
+            #         Name: !Join ["-", [!Ref ServiceName, "volume"]]
+            Volumes: 
+                - 
+                    Host: 
+                        SourcePath: /mnt/efs/pets-volume
+                    Name: pets-volume
+
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 365  
+
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            VpcId: 
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            Port: 80
+            Protocol: HTTP
+            Matcher: 
+                HttpCode: 200-299
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPath: /pets
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 2
+    
+    ListenerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties:
+            ListenerArn: 
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-alb-listener"
+            Priority: 4
+            Conditions:
+                - Field: path-pattern
+                  Values: 
+                    - !Ref Path
+            Actions:
+                - TargetGroupArn: !Ref TargetGroup
+                  Type: forward
+
+   

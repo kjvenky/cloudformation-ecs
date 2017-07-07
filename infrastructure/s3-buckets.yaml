@@ -1,5 +1,6 @@
 Description: >
-    This template deploys an s3 buckets needed to save micro service templates.
+    This template creates a list of s3 buckets needed for this infrastruture.
+    1. Service Templates
 
 Parameters:
     CompanyName:
@@ -50,3 +51,5 @@ Outputs:
     TemplatesEndPoint:
         Description: End point for the S3 bucket
         Value: !Ref ServiceTemplates
+        Export:
+          Name: !Join [ "-", [ !Ref CompanyName, !Ref EnvironmentName, 'service-templates' ]]

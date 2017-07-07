@@ -1,0 +1,64 @@
+Description: >
+    This template creates IAM roles required for the infrastructure.
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+Resources:
+    
+    # This IAM Role grants the service access to register/unregister with the 
+    # Application Load Balancer (ALB). It is based on the default documented here:
+    # http://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_IAM_role.html
+    ServiceRole: 
+        Type: AWS::IAM::Role
+        Properties: 
+            RoleName: !Sub ${EnvironmentName}-${AWS::StackName}-iam-service-role
+            Path: /
+            AssumeRolePolicyDocument: |
+                {
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": { "Service": [ "ecs.amazonaws.com" ]},
+                        "Action": [ "sts:AssumeRole" ]
+                    }]
+                }
+            Policies: 
+                - PolicyName: !Sub ${EnvironmentName}-${AWS::StackName}-iam-service-role
+                  PolicyDocument: 
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "ec2:AuthorizeSecurityGroupIngress",
+                                    "ec2:Describe*",
+                                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                                    "elasticloadbalancing:Describe*",
+                                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                                    "elasticloadbalancing:DeregisterTargets",
+                                    "elasticloadbalancing:DescribeTargetGroups",
+                                    "elasticloadbalancing:DescribeTargetHealth",
+                                    "elasticloadbalancing:RegisterTargets",
+                                    "cloudformation:CreateStack", # Added to launch services as independent stack
+                                    "cloudformation:DescribeStacks",
+                                    "cloudformation:DescribeStackEvents",
+                                    "cloudformation:DescribeStackResources",
+                                    "cloudformation:GetTemplate",
+                                    "cloudformation:ValidateTemplate" 
+                                ],
+                                "Resource": "*"
+                        }]
+                    }
+
+Outputs:
+
+    ServiceIAMRole:
+        Description: This role is used by all transin-microservices by default
+        Value: !Ref ServiceRole
+        Export: 
+            Name: !Sub '${EnvironmentName}-iam-service-role'
+
+    
