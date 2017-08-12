@@ -43,7 +43,7 @@ Resources:
             CidrBlock: !Ref VpcCIDR
             EnableDnsHostnames: true
             EnableDnsSupport: true
-            InstanceTenancy: dedicated
+            InstanceTenancy: default
             Tags: 
                 - Key: Name 
                   Value: !Ref EnvironmentName
