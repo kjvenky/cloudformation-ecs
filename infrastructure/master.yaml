@@ -171,7 +171,7 @@ Resources:
             TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'ecs-cluster.yaml' ]]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
-                InstanceType: c4.large
+                InstanceType: t2.micro
                 ClusterSize: 1
                 KeyName: !Ref ECSKeyName
                 FileSystem: !GetAtt EFS.Outputs.FileSystem
