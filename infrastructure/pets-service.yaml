@@ -57,7 +57,7 @@ Resources:
             ContainerDefinitions:
                 - Name: pets-service
                   Essential: true
-                  Image: transin-ms/pets
+                  Image: kjvenky/pets
                   Memory: 64
                   PortMappings:
                     - ContainerPort: 3000

@@ -1,0 +1,55 @@
+Description: >
+    This template contains the security groups required by our entire stack.
+    We create them in a seperate nested template, so they can be referenced
+    by all of the other nested templates.
+
+Parameters:
+    
+    CompanyName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: transin
+    
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: staging
+
+Resources:
+    
+    Repository: 
+      Type: "AWS::ECR::Repository"
+      Properties: 
+        RepositoryName: !Join ['-', [!Ref CompanyName, !Ref EnvironmentName, 'ecr']] 
+        RepositoryPolicyText: 
+          Version: "2012-10-17"
+          Statement: 
+            - 
+              Sid: AllowPushPull
+              Effect: Allow
+              Principal: "*" 
+              Action: 
+                - "ecr:GetDownloadUrlForLayer"
+                - "ecr:BatchGetImage"
+                - "ecr:BatchCheckLayerAvailability"
+                - "ecr:PutImage"
+                - "ecr:InitiateLayerUpload"
+                - "ecr:UploadLayerPart"
+                - "ecr:CompleteLayerUpload"
+
+
+Outputs:
+    
+    ECREndPoint:
+        Description: A reference to the security group for ECS hosts
+        Value:
+            Fn::Join:
+            - ''
+            -   - !Ref AWS::AccountId
+                - '.dkr.ecr.'
+                - !Ref AWS::Region
+                - '.amazonaws.com/'
+                - !Ref Repository
+        Export:
+            Name: !Sub '${CompanyName}-${EnvironmentName}-ecr-repository'
+
