@@ -57,12 +57,7 @@ Resources:
             ContainerDefinitions:
                 - Name: pets-service
                   Essential: true
-                  MountPoints: 
-                    - 
-                        SourceVolume: pets-volume
-                        ContainerPath: /app/
-                        ReadOnly: false
-                  Image: kjvenky/pets
+                  Image: transin-ms/pets
                   Memory: 64
                   PortMappings:
                     - ContainerPort: 3000
@@ -76,11 +71,6 @@ Resources:
             #         Host: 
             #             SourcePath: !Join ["/", ["/efs/", !Join ["-", [!Ref ServiceName, "service"]]]]
             #         Name: !Join ["-", [!Ref ServiceName, "volume"]]
-            Volumes: 
-                - 
-                    Host: 
-                        SourcePath: /mnt/efs/pets-volume
-                    Name: pets-volume
 
     CloudWatchLogsGroup:
         Type: AWS::Logs::LogGroup
