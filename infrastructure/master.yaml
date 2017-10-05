@@ -176,16 +176,16 @@ Resources:
                 KeyName: !Ref ECSKeyName
                 FileSystem: !GetAtt EFS.Outputs.FileSystem
 
-    ECR:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'ecr-dockerhub.yaml' ]]
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
-                InstanceType: t2.micro
-                ClusterSize: 1
-                KeyName: !Ref ECSKeyName
-                FileSystem: !GetAtt EFS.Outputs.FileSystem
+    # ECR:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: !Join [ "/", [ !Ref InfraStructureBucket, 'ecr-dockerhub.yaml' ]]
+    #         Parameters:
+    #             EnvironmentName: !Ref EnvironmentName
+    #             InstanceType: t2.micro
+    #             ClusterSize: 1
+    #             KeyName: !Ref ECSKeyName
+    #             FileSystem: !GetAtt EFS.Outputs.FileSystem
 
     # # Deploy pets for testing
     PETS:
