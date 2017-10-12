@@ -24,9 +24,9 @@ Parameters:
 
     Version:
         Type: String
-        Default: 0.0.1
+        Default: '0.0.1'
 
-    Cluster: # Depends on the company environemnt
+    Cluster: # Depends on the company environment
         Description: Please provide the ECS Cluster ID that this service should run on
         Type: String
         Default: staging
@@ -102,7 +102,7 @@ Resources:
             Matcher: 
                 HttpCode: 200-299
             HealthCheckIntervalSeconds: 300
-            HealthCheckPath: /alive # Autocontruck health check path name
+            HealthCheckPath: /ping # Autocontruck health check path name
             HealthCheckProtocol: HTTP
             HealthCheckTimeoutSeconds: 5
             HealthyThresholdCount: 2
