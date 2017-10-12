@@ -229,7 +229,7 @@ Parameters:
     MinValue: '1'
     Type: Number
   NumWorkers:
-    Default: '2'
+    Default: '0'
     Description: Number of Kafka Connect Workers
     MaxValue: '9'
     MinValue: '0'
@@ -240,7 +240,7 @@ Parameters:
       - '1'
       - '3'
       - '5'
-    Default: '0'
+    Default: '3'
     Description: >-
       Number of independent Zookeepers (if 0, zookeeper will be deployed on the
       Kafka brokers)
@@ -250,7 +250,7 @@ Parameters:
     ConstraintDescription: >-
       Quick Start bucket name can include numbers, lowercase letters, uppercase
       letters, and hyphens (-). It cannot start or end with a hyphen (-).
-    Default: truce-confluent-setup
+    Default: truce-infra
     Description: >-
       S3 bucket name for the Quick Start assets. Quick Start bucket name can
       include numbers, lowercase letters, uppercase letters, and hyphens (-). It
@@ -261,19 +261,21 @@ Parameters:
     ConstraintDescription: >-
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    Default: confluent/kafka/latest/
+    Default: confluent
     Description: >-
       S3 key prefix for the Quick Start assets. Quick Start key prefix can
       include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
   RemoteAccessCIDR:
+    Default: '0.0.0.0/0'
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
     Description: Allowed CIDR block for external access to cluster nodes
     Type: String
   SSHAccessCIDR:
+    Default: '0.0.0.0/0'
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
@@ -361,7 +363,7 @@ Parameters:
     Type: String
   ZookeeperNodeStorage:
     ConstraintDescription: No more than 4096 GiB per device (16 TiB per node).
-    Default: '0'
+    Default: '8'
     Description: >-
       Allocated EBS storage for each block device (in GiB; 4 devs per node); 0
       indicates ephemeral storage only
@@ -379,15 +381,15 @@ Rules:
             - 'Fn::RefAll': 'AWS::EC2::VPC::Id'
         AssertDescription: All subnets must in the VPC
 Conditions:
-  IndependentWorkers: !Not 
-    - !Equals 
+  IndependentWorkers: !Not
+    - !Equals
       - !Ref NumWorkers
       - '0'
-  IndependentZookeepers: !Not 
-    - !Equals 
+  IndependentZookeepers: !Not
+    - !Equals
       - !Ref NumZookeepers
       - '0'
-  EnableWaitConditions: !Equals 
+  EnableWaitConditions: !Equals
     - '1'
     - '1'
 Resources:
@@ -430,42 +432,42 @@ Resources:
       Roles:
         - !Ref InstanceIAMRole
     Type: 'AWS::IAM::InstanceProfile'
-  BrokerStack:
-    Type: 'AWS::CloudFormation::Stack'
-    Properties:
-      TemplateURL: !Sub >-
-        https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/node-confluent.yaml
-      Parameters:
-        AssignPublicIP: !Ref AssignPublicIP
-        BootDiskSize: !Ref BootDiskSize
-        ClusterInfoHandle: !Ref ClusterInfoHandle
-        ClusterName: !Ref ClusterName
-        ConfluentEdition: !Ref ConfluentEdition
-        ConfluentVersion: !Ref ConfluentVersion
-        ConnectorURLs: !Ref ConnectorURLs
-        InstanceProfile: !Ref InstanceProfile
-        InstanceRole: !Ref InstanceIAMRole
-        KeyPairName: !Ref KeyPairName
-        LinuxOSAMI: !Ref LinuxOSAMI
-        NodeDesignation: broker
-        NodeInstanceType: !Ref BrokerNodeInstanceType
-        NodeSecurityGroup: !Ref BrokerSecurityGroup
-        NodeSpotPrice: !Ref BrokerNodeSpotPrice
-        NumNodes: !Ref NumBrokers
-        ParentStackName: !Ref 'AWS::StackName'
-        PersistentStorage: !Ref BrokerNodeStorage
-        PersistentStorageType: !Ref BrokerNodeStorageType
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        SubnetID: !Join 
-          - ','
-          - !Ref SubnetID
+  # BrokerStack:
+  #   Type: 'AWS::CloudFormation::Stack'
+  #   Properties:
+  #     TemplateURL: !Sub >-
+  #       https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/node-confluent.yaml
+  #     Parameters:
+  #       AssignPublicIP: !Ref AssignPublicIP
+  #       BootDiskSize: !Ref BootDiskSize
+  #       ClusterInfoHandle: !Ref ClusterInfoHandle
+  #       ClusterName: !Ref ClusterName
+  #       ConfluentEdition: !Ref ConfluentEdition
+  #       ConfluentVersion: !Ref ConfluentVersion
+  #       ConnectorURLs: !Ref ConnectorURLs
+  #       InstanceProfile: !Ref InstanceProfile
+  #       InstanceRole: !Ref InstanceIAMRole
+  #       KeyPairName: !Ref KeyPairName
+  #       LinuxOSAMI: !Ref LinuxOSAMI
+  #       NodeDesignation: broker
+  #       NodeInstanceType: !Ref BrokerNodeInstanceType
+  #       NodeSecurityGroup: !Ref BrokerSecurityGroup
+  #       NodeSpotPrice: !Ref BrokerNodeSpotPrice
+  #       NumNodes: !Ref NumBrokers
+  #       ParentStackName: !Ref 'AWS::StackName'
+  #       PersistentStorage: !Ref BrokerNodeStorage
+  #       PersistentStorageType: !Ref BrokerNodeStorageType
+  #       QSS3BucketName: !Ref QSS3BucketName
+  #       QSS3KeyPrefix: !Ref QSS3KeyPrefix
+  #       SubnetID: !Join
+  #         - ','
+  #         - !Ref SubnetID
   ZookeeperStack:
     Type: 'AWS::CloudFormation::Stack'
     Condition: IndependentZookeepers
     Properties:
       TemplateURL: !Sub >-
-        https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/node-confluent.yaml
+        https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/node-confluent.yaml
       Parameters:
         AssignPublicIP: !Ref AssignPublicIP
         BootDiskSize: !Ref BootDiskSize
@@ -486,38 +488,38 @@ Resources:
         PersistentStorage: !Ref ZookeeperNodeStorage
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        SubnetID: !Join 
+        SubnetID: !Join
           - ','
           - !Ref SubnetID
-  WorkerStack:
-    Type: 'AWS::CloudFormation::Stack'
-    Condition: IndependentWorkers
-    Properties:
-      TemplateURL: !Sub >-
-        https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/node-confluent.yaml
-      Parameters:
-        AssignPublicIP: !Ref AssignPublicIP
-        BootDiskSize: !Ref BootDiskSize
-        ClusterInfoHandle: !Ref ClusterInfoHandle
-        ClusterName: !Ref ClusterName
-        ConfluentEdition: !Ref ConfluentEdition
-        ConfluentVersion: !Ref ConfluentVersion
-        InstanceProfile: !Ref InstanceProfile
-        InstanceRole: !Ref InstanceIAMRole
-        KeyPairName: !Ref KeyPairName
-        LinuxOSAMI: !Ref LinuxOSAMI
-        NodeDesignation: worker
-        NodeInstanceType: !Ref WorkerNodeInstanceType
-        NodeSecurityGroup: !Ref WorkerSecurityGroup
-        NodeSpotPrice: !Ref WorkerNodeSpotPrice
-        NumNodes: !Ref NumWorkers
-        ParentStackName: !Ref 'AWS::StackName'
-        PersistentStorage: !Ref WorkerNodeStorage
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        SubnetID: !Join 
-          - ','
-          - !Ref SubnetID
+  # WorkerStack:
+  #   Type: 'AWS::CloudFormation::Stack'
+  #   Condition: IndependentWorkers
+  #   Properties:
+  #     TemplateURL: !Sub >-
+  #       https://s3-us-west-2.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/node-confluent.yaml
+  #     Parameters:
+  #       AssignPublicIP: !Ref AssignPublicIP
+  #       BootDiskSize: !Ref BootDiskSize
+  #       ClusterInfoHandle: !Ref ClusterInfoHandle
+  #       ClusterName: !Ref ClusterName
+  #       ConfluentEdition: !Ref ConfluentEdition
+  #       ConfluentVersion: !Ref ConfluentVersion
+  #       InstanceProfile: !Ref InstanceProfile
+  #       InstanceRole: !Ref InstanceIAMRole
+  #       KeyPairName: !Ref KeyPairName
+  #       LinuxOSAMI: !Ref LinuxOSAMI
+  #       NodeDesignation: worker
+  #       NodeInstanceType: !Ref WorkerNodeInstanceType
+  #       NodeSecurityGroup: !Ref WorkerSecurityGroup
+  #       NodeSpotPrice: !Ref WorkerNodeSpotPrice
+  #       NumNodes: !Ref NumWorkers
+  #       ParentStackName: !Ref 'AWS::StackName'
+  #       PersistentStorage: !Ref WorkerNodeStorage
+  #       QSS3BucketName: !Ref QSS3BucketName
+  #       QSS3KeyPrefix: !Ref QSS3KeyPrefix
+  #       SubnetID: !Join
+  #         - ','
+  #         - !Ref SubnetID
   BrokerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -563,35 +565,35 @@ Resources:
   ZookeeperIngressTcp2888:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
       IpProtocol: tcp
       FromPort: '2888'
       ToPort: '2888'
-      SourceSecurityGroupId: !If 
+      SourceSecurityGroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
   ZookeeperIngressTcp3888:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
       IpProtocol: tcp
       FromPort: '3888'
       ToPort: '3888'
-      SourceSecurityGroupId: !If 
+      SourceSecurityGroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
   ZookeeperBrokerIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -603,7 +605,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: IndependentWorkers
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -614,7 +616,7 @@ Resources:
   ZookeeperRemoteIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentZookeepers
         - !Ref ZookeeperSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -636,7 +638,7 @@ Resources:
   SchemaRegistryRemoteIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentWorkers
         - !Ref WorkerSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -647,7 +649,7 @@ Resources:
   RESTProxyRemoteIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentWorkers
         - !Ref WorkerSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -658,7 +660,7 @@ Resources:
   KafkaConnectRemoteIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentWorkers
         - !Ref WorkerSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -669,7 +671,7 @@ Resources:
   ControlCenterRemoteIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !If 
+      GroupId: !If
         - IndependentWorkers
         - !Ref WorkerSecurityGroup
         - !Ref BrokerSecurityGroup
@@ -679,23 +681,23 @@ Resources:
       CidrIp: !Ref RemoteAccessCIDR
   ClusterInfoHandle:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
-  ClusterInfoCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    Condition: EnableWaitConditions
-    DependsOn: BrokerStack
-    Properties:
-      Handle: !Ref ClusterInfoHandle
-      Timeout: '120'
-      Count: '1'
-Outputs:
-  ClusterInfo:
-    Condition: EnableWaitConditions
-    Description: Cluster Information
-    Value: !GetAtt 
-      - ClusterInfoCondition
-      - Data
-  SubnetID:
-    Description: Subnet(s) used by deployment
-    Value: !Join 
-      - ','
-      - !Ref SubnetID
+  # ClusterInfoCondition:
+  #   Type: 'AWS::CloudFormation::WaitCondition'
+  #   Condition: EnableWaitConditions
+  #   DependsOn: BrokerStack
+  #   Properties:
+  #     Handle: !Ref ClusterInfoHandle
+  #     Timeout: '300'
+  #     Count: '1'
+# Outputs:
+#   ClusterInfo:
+#       Condition: EnableWaitConditions
+#       Description: Cluster Information
+#       Value: !GetAtt
+#         - ClusterInfoCondition
+#         - Data
+#   SubnetID:
+#     Description: Subnet(s) used by deployment
+#     Value: !Join
+#       - ','
+#       - !Ref SubnetID
