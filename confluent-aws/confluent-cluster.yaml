@@ -217,7 +217,7 @@ Parameters:
       - Ubuntu-Server-16.04-LTS-HVM
       - Amazon-Linux-HVM
     ConstraintDescription: Supported versions of Linux AMIs for Confluent deployments
-    Default: CentOS-7-HVM
+    Default: Amazon-Linux-HVM
     Description: >-
       Operating system AMI for cluster instances; you MUST authorize access to
       the proper AMI at https://aws.amazon.com/marketplace
@@ -687,17 +687,17 @@ Resources:
   #   DependsOn: BrokerStack
   #   Properties:
   #     Handle: !Ref ClusterInfoHandle
-  #     Timeout: '300'
+  #     Timeout: '120'
   #     Count: '1'
-# Outputs:
-#   ClusterInfo:
-#       Condition: EnableWaitConditions
-#       Description: Cluster Information
-#       Value: !GetAtt
-#         - ClusterInfoCondition
-#         - Data
-#   SubnetID:
-#     Description: Subnet(s) used by deployment
-#     Value: !Join
-#       - ','
-#       - !Ref SubnetID
+Outputs:
+  # ClusterInfo:
+  #     Condition: EnableWaitConditions
+  #     Description: Cluster Information
+  #     Value: !GetAtt
+  #       - ClusterInfoCondition
+  #       - Data
+  SubnetID:
+    Description: Subnet(s) used by deployment
+    Value: !Join
+      - ','
+      - !Ref SubnetID

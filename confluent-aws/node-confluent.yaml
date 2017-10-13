@@ -78,6 +78,7 @@ Parameters:
     AllowedValues:
     - t2.nano
     - t2.micro
+    - t2.small
     - t2.medium
     - t2.large
     - m3.medium
@@ -154,7 +155,7 @@ Parameters:
     AllowedPattern: "^[0-9a-zA-Z-/]*$"
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
-    Default: confluent
+    Default: confluent/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
