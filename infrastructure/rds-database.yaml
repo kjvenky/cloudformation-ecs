@@ -34,7 +34,7 @@ Parameters:
     
     DBMasterUserPassword:
         Type: String
-        Default: epoo9mohNg
+        Default: <PASSWORD>
     
     DBInstanceClass:
         Type: String
